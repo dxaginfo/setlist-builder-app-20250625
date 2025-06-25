@@ -1,0 +1,52 @@
+{
+  "name": "setlist-builder-sync",
+  "version": "1.0.0",
+  "description": "A collaborative application for musicians to build, edit, track, and export setlists with real-time synchronization",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:client": "cd client && npm start",
+    "start:server": "cd server && npm run dev",
+    "build": "npm run build:shared && npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build:shared": "cd shared && npm run build",
+    "test": "npm run test:shared && npm run test:client && npm run test:server",
+    "test:client": "cd client && npm test",
+    "test:server": "cd server && npm test",
+    "test:shared": "cd shared && npm test",
+    "lint": "npm run lint:client && npm run lint:server && npm run lint:shared",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint",
+    "lint:shared": "cd shared && npm run lint",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "DX ag",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dxaginfo/setlist-builder-app-20250625.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dxaginfo/setlist-builder-app-20250625/issues"
+  },
+  "homepage": "https://github.com/dxaginfo/setlist-builder-app-20250625#readme",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
+  }
+}
