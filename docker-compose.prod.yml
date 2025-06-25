@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # MongoDB database
+  mongo:
+    image: mongo:5.0
+    container_name: setlist-builder-mongo
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    networks:
+      - setlist-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching and real-time features
+  redis:
+    image: redis:6.2-alpine
+    container_name: setlist-builder-redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    networks:
+      - setlist-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend API service
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: setlist-builder-api
+    restart: always
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/${MONGO_DATABASE}?authSource=admin
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - CLIENT_URL=${CLIENT_URL}
+    networks:
+      - setlist-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend React application
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: setlist-builder-client
+    restart: always
+    depends_on:
+      - api
+    networks:
+      - setlist-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: setlist-builder-nginx
+    restart: always
+    ports:
+      - "${PORT:-80}:80"
+      - "${SSL_PORT:-443}:443"
+    volumes:
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/www:/var/www/html
+    depends_on:
+      - client
+      - api
+    networks:
+      - setlist-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  setlist-network:
+    driver: bridge
